@@ -2,22 +2,22 @@
 import { reactive, ref, onMounted, computed } from 'vue'
 
 // state
-const crime_url = ref('');
-const apiBaseUrl = ref('');
-const dialog_err = ref(false);
+let crime_url = ref('');
+let apiBaseUrl = ref('');
+let dialog_err = ref(false);
 
-const isLoading = ref(false);
-const loadError = ref('');
+let isLoading = ref(false);
+let loadError = ref('');
 
-const locationInput = ref('');
-const geoError = ref('');
+let locationInput = ref('');
+let geoError = ref('');
 
-const crimes = ref([]);
-const codesMap = ref({});
-const neighborhoodsMap = ref({});
-const visibleNeighborhoodIds = ref([]);
+let crimes = ref([]);
+let codesMap = ref({});
+let neighborhoodsMap = ref({});
+let visibleNeighborhoodIds = ref([]);
 
-const filters = reactive({
+let filters = reactive({
   selectedIncidentGroups: [],
   selectedNeighborhoods: [],
   startDate: '',
@@ -25,16 +25,16 @@ const filters = reactive({
   maxIncidents: 1000
 });
 
-const allIncidentTypes = computed(() => {
-  const set = new Set()
+let allIncidentTypes = computed(() => {
+  let set = new Set()
   crimes.value.forEach(c => {
     if (c.incident_type) set.add(c.incident_type)
   })
   return Array.from(set).sort()
 });
 
-const allNeighborhoodNames = computed(() => {
-  const set = new Set()
+let allNeighborhoodNames = computed(() => {
+  let set = new Set()
   crimes.value.forEach(c => {
     if (c.neighborhood_name) set.add(c.neighborhood_name)
   })
@@ -199,7 +199,7 @@ let incidentGroups = [
 ];
 
 function getCategoryForCode(code) {
-  for (const group of incidentGroups) {
+  for (let group of incidentGroups) {
     if (group.codes.includes(code)) {
       return group.category || 'other'
     }
@@ -207,7 +207,7 @@ function getCategoryForCode(code) {
   return 'other'
 };
 
-const selectedCodes = computed(() => {
+let selectedCodes = computed(() => {
   if (!filters.selectedIncidentGroups || filters.selectedIncidentGroups.length === 0) {
     return []
   }
@@ -218,7 +218,7 @@ const selectedCodes = computed(() => {
 });
 
 
-const newIncident = reactive({
+let newIncident = reactive({
   case_number: '',
   date: '',
   time: '',
@@ -228,10 +228,10 @@ const newIncident = reactive({
   neighborhood_number: '',
   block: ''
 });
-const newIncidentError = ref('');
-const newIncidentSuccess = ref('');
+let newIncidentError = ref('');
+let newIncidentSuccess = ref('');
 
-const map = reactive({
+let map = reactive({
   leaflet: null,
   center: {
     lat: 44.955139,
@@ -264,7 +264,7 @@ const map = reactive({
   ]
 });
 
-const filteredCrimes = computed(() => {
+let filteredCrimes = computed(() => {
   let list = crimes.value;
 
   if (selectedCodes.value.length > 0) {
@@ -289,7 +289,7 @@ const filteredCrimes = computed(() => {
   return list
 });
 
-const visibleCrimes = computed(() => {
+let visibleCrimes = computed(() => {
   let baseList = filteredCrimes.value;
 
   // filter to visible neighborhoods (based on map)
@@ -300,7 +300,7 @@ const visibleCrimes = computed(() => {
   }
 
   // apply max incidents *after* all filters
-  const max = Number(filters.maxIncidents)
+  let max = Number(filters.maxIncidents)
   if (max > 0 && baseList.length > max) {
     return baseList.slice(0, max);
   }
@@ -308,25 +308,20 @@ const visibleCrimes = computed(() => {
   return baseList;
 });
 
-// map setup
+// Vue callback for once <template> HTML has been added to web page
 onMounted(() => {
-  // create map
+  // Create Leaflet map (set bounds and valied zoom levels)
   map.leaflet = L.map('leafletmap').setView([map.center.lat, map.center.lng], map.zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     minZoom: 11,
     maxZoom: 18
-  }).addTo(map.leaflet)
+  }).addTo(map.leaflet);
+  map.leaflet.setMaxBounds([[44.883658, -93.217977], [45.008206, -92.993787]]);
 
-  // limit panning to only st. paul
-  map.leaflet.setMaxBounds([
-    [map.bounds.se.lat, map.bounds.nw.lng],
-    [map.bounds.nw.lat, map.bounds.se.lng]
-  ]);
-
-  // show distinct boundaries
-  const district_boundary = new L.geoJson();
+  // Get boundaries for St. Paul neighborhoods
+  let district_boundary = new L.geoJson();
   district_boundary.addTo(map.leaflet);
   fetch('data/StPaulDistrictCouncil.geojson')
     .then(response => response.json())
@@ -341,7 +336,7 @@ onMounted(() => {
 
   // update neighborhoods and update search box
   map.leaflet.on('moveend', () => {
-    const center = map.leaflet.getCenter();
+    let center = map.leaflet.getCenter();
     map.center.lat = center.lat;
     map.center.lng = center.lng;
     map.zoom = map.leaflet.getZoom();
@@ -355,28 +350,28 @@ onMounted(() => {
 
 // helper methods
 function clampToBounds(lat, lng) {
-  const minLat = map.bounds.se.lat;
-  const maxLat = map.bounds.nw.lat;
-  const minLng = map.bounds.nw.lng;
-  const maxLng = map.bounds.se.lng;
+  let minLat = map.bounds.se.lat;
+  let maxLat = map.bounds.nw.lat;
+  let minLng = map.bounds.nw.lng;
+  let maxLng = map.bounds.se.lng;
 
-  const clampedLat = Math.min(maxLat, Math.max(minLat, lat));
-  const clampedLng = Math.min(maxLng, Math.max(minLng, lng));
+  let clampedLat = Math.min(maxLat, Math.max(minLat, lat));
+  let clampedLng = Math.min(maxLng, Math.max(minLng, lng));
   return { lat: clampedLat, lng: clampedLng };
 }
 
 function updateVisibleNeighborhoods() {
   if (!map.leaflet) return;
 
-  const bounds = map.leaflet.getBounds();
-  const north = bounds.getNorth();
-  const south = bounds.getSouth();
-  const west = bounds.getWest();
-  const east = bounds.getEast();
+  let bounds = map.leaflet.getBounds();
+  let north = bounds.getNorth();
+  let south = bounds.getSouth();
+  let west = bounds.getWest();
+  let east = bounds.getEast();
 
-  const visibleIds = map.neighborhood_markers
+  let visibleIds = map.neighborhood_markers
     .filter(n => {
-      const [lat, lng] = n.location
+      let [lat, lng] = n.location
       return lat <= north && lat >= south && lng >= west && lng <= east
     })
     .map(n => n.id);
@@ -386,20 +381,20 @@ function updateVisibleNeighborhoods() {
 
 function updateNeighborhoodMarkers() {
   // count crimes per neighborhood
-  const counts = {};
+  let counts = {};
   filteredCrimes.value.forEach(c => {
-  const id = c.neighborhood_number;
+  let id = c.neighborhood_number;
   counts[id] = (counts[id] || 0) + 1;
   });
 
   map.neighborhood_markers.forEach(n => {
-    const id = n.id;
-    const name = neighborhoodsMap.value[id] || `Neighborhood ${id}`;
-    const count = counts[id] || 0;
-    const popupHtml = `<strong>${name}</strong><br/>${count} crimes`;
+    let id = n.id;
+    let name = neighborhoodsMap.value[id] || `Neighborhood ${id}`;
+    let count = counts[id] || 0;
+    let popupHtml = `<strong>${name}</strong><br/>${count} crimes`;
 
     if (!n.marker) {
-      const marker = L.marker(n.location).addTo(map.leaflet)
+      let marker = L.marker(n.location).addTo(map.leaflet)
       n.marker = marker
       marker.bindPopup(popupHtml)
     } else {
@@ -409,7 +404,7 @@ function updateNeighborhoodMarkers() {
 }
 
 // load crime data
-async function initializeCrimes() {
+function initializeCrimes() {
   try {
     if (!crime_url.value) {
       dialog_err.value = true;
@@ -421,122 +416,147 @@ async function initializeCrimes() {
     isLoading.value = true;
     loadError.value = '';
 
-    const [codesRes, neighborhoodsRes, incidentsRes] = await Promise.all([
+    Promise.all([
       fetch(`${apiBaseUrl.value}/codes`),
       fetch(`${apiBaseUrl.value}/neighborhoods`),
       fetch(`${apiBaseUrl.value}/incidents?limit=1000`)
     ])
+      .then(([codesRes, neighborhoodsRes, incidentsRes]) => {
+        if (!codesRes.ok || !neighborhoodsRes.ok || !incidentsRes.ok) {
+          throw new Error('Error fetching data from REST API');
+        }
+        return Promise.all([
+          codesRes.json(),
+          neighborhoodsRes.json(),
+          incidentsRes.json()
+        ]);
+      })
+      .then(([codesData, neighborhoodsData, incidentsData]) => {
+        let cMap = {};
+        codesData.forEach(c => {
+          cMap[c.code] = c.type;
+        });
+        codesMap.value = cMap;
 
-    if (!codesRes.ok || !neighborhoodsRes.ok || !incidentsRes.ok) {
-      throw new Error('Error fetching data from REST API')
-    }
+        let nMap = {};
+        neighborhoodsData.forEach(n => {
+          nMap[n.id] = n.name;
+        });
+        neighborhoodsMap.value = nMap;
 
-    const codesData = await codesRes.json();
-    const neighborhoodsData = await neighborhoodsRes.json();
-    const incidentsData = await incidentsRes.json();
+        crimes.value = incidentsData.map(inc => ({
+          ...inc,
+          incident_type: cMap[inc.code] || String(inc.code),
+          neighborhood_name: nMap[inc.neighborhood_number] || String(inc.neighborhood_number),
+          category: getCategoryForCode(inc.code)
+        }));
 
-    const cMap = {};
-    codesData.forEach(c => {
-      cMap[c.code] = c.type;
-    })
-    codesMap.value = cMap;
-
-    const nMap = {};
-    neighborhoodsData.forEach(n => {
-      nMap[n.id] = n.name;
-    })
-    neighborhoodsMap.value = nMap;
-
-    crimes.value = incidentsData.map(inc => ({
-      ...inc,
-      incident_type: cMap[inc.code] || String(inc.code),
-      neighborhood_name: nMap[inc.neighborhood_number] || String(inc.neighborhood_number),
-      category: getCategoryForCode(inc.code)
-    }))
-
-    updateVisibleNeighborhoods();
-    updateNeighborhoodMarkers();
+        updateVisibleNeighborhoods();
+        updateNeighborhoodMarkers();
+      })
+      .catch(err => {
+        console.error(err);
+        loadError.value = 'Error loading data from REST API';
+      })
+      .finally(() => {
+        isLoading.value = false;
+      });
   } catch (err) {
+    // this outer try/catch will almost never fire, but we'll keep it symmetrical
     console.error(err);
     loadError.value = 'Error loading data from REST API';
-  } finally {
     isLoading.value = false;
   }
 }
 
-async function refreshCrimes() {
-  try {
-    if (!apiBaseUrl.value) return;
-    const res = await fetch(`${apiBaseUrl.value}/incidents?limit=1000`);
-    if (!res.ok) throw new Error('Error refreshing incidents');
-    const incidentsData = await res.json();
-    crimes.value = incidentsData.map(inc => ({
-      ...inc,
-      incident_type: codesMap.value[inc.code] || String(inc.code),
-      neighborhood_name:
-        neighborhoodsMap.value[inc.neighborhood_number] || String(inc.neighborhood_number),
-        category: getCategoryForCode(inc.code)
-    }))
-    updateVisibleNeighborhoods();
-    updateNeighborhoodMarkers();
-  } catch (err) {
-    console.error(err);
-  }
+function refreshCrimes() {
+  if (!apiBaseUrl.value) return;
+
+  fetch(`${apiBaseUrl.value}/incidents?limit=1000`)
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('Error refreshing incidents');
+      }
+      return res.json();
+    })
+    .then(incidentsData => {
+      crimes.value = incidentsData.map(inc => ({
+        ...inc,
+        incident_type: codesMap.value[inc.code] || String(inc.code),
+        neighborhood_name:
+          neighborhoodsMap.value[inc.neighborhood_number] ||
+          String(inc.neighborhood_number),
+          category: getCategoryForCode(inc.code)
+      }));
+
+      updateVisibleNeighborhoods();
+      updateNeighborhoodMarkers();
+    })
+    .catch(err => {
+      console.error(err);
+    });
 }
 
-async function applyFilters() {
-  try {
-    if (!apiBaseUrl.value) return;
+function applyFilters() {
+  if (!apiBaseUrl.value) return;
 
-    isLoading.value = true;
-    loadError.value = '';
+  isLoading.value = true;
+  loadError.value = '';
 
-    const params = new URLSearchParams();
-    params.set('limit', '1000');
+  let params = new URLSearchParams();
+  params.set('limit', '1000');
 
-    if (filters.startDate) {
-      params.set('start_date', filters.startDate);
-    }
-    if (filters.endDate) {
-      params.set('end_date', filters.endDate);
-    }
-
-    const res = await fetch(`${apiBaseUrl.value}/incidents?` + params.toString());
-    if (!res.ok) throw new Error('Error fetching filtered incidents');
-
-    const incidentsData = await res.json();
-    crimes.value = incidentsData.map(inc => ({
-      ...inc,
-      incident_type: codesMap.value[inc.code] || String(inc.code),
-      neighborhood_name:
-        neighborhoodsMap.value[inc.neighborhood_number] || String(inc.neighborhood_number),
-        category: getCategoryForCode(inc.code)
-    }))
-
-    updateVisibleNeighborhoods();
-    updateNeighborhoodMarkers();
-  } catch (err) {
-    console.error(err);
-    loadError.value = 'Error loading filtered data from REST API';
-  } finally {
-    isLoading.value = false;
+  if (filters.startDate) {
+    params.set('start_date', filters.startDate);
   }
+  if (filters.endDate) {
+    params.set('end_date', filters.endDate);
+  }
+
+  fetch(`${apiBaseUrl.value}/incidents?` + params.toString())
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('Error fetching filtered incidents');
+      }
+      return res.json();
+    })
+    .then(incidentsData => {
+      crimes.value = incidentsData.map(inc => ({
+        ...inc,
+        incident_type: codesMap.value[inc.code] || String(inc.code),
+        neighborhood_name:
+          neighborhoodsMap.value[inc.neighborhood_number] ||
+          String(inc.neighborhood_number),
+        category: getCategoryForCode(inc.code)
+      }));
+
+      updateVisibleNeighborhoods();
+      updateNeighborhoodMarkers();
+    })
+    .catch(err => {
+      console.error(err);
+      loadError.value = 'Error loading filtered data from REST API';
+    })
+    .finally(() => {
+      isLoading.value = false;
+    });
 }
 
 // geocoding
-async function goToLocation() {
+function goToLocation() {
   geoError.value = '';
 
-  const raw = locationInput.value.trim();
+  let raw = locationInput.value.trim();
   if (!raw) return;
- 
-  // try to parse "lat, lng"
-  const parts = raw.split(',');
+
+  // check if user entered "lat, lng"
+  let parts = raw.split(',');
   if (parts.length === 2) {
-    const lat = Number(parts[0].trim());
-    const lng = Number(parts[1].trim());
+    let lat = Number(parts[0].trim());
+    let lng = Number(parts[1].trim());
+
     if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
-      const clamped = clampToBounds(lat, lng);
+      let clamped = clampToBounds(lat, lng);
       map.center.lat = clamped.lat;
       map.center.lng = clamped.lng;
       map.leaflet.setView([map.center.lat, map.center.lng]);
@@ -545,40 +565,44 @@ async function goToLocation() {
   }
 
   // otherwise use nominatim
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(
-      raw
-    )}`;
-    const res = await fetch(url, {
-      headers: {
-        Accept: 'application/json'
+  let url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(raw)}`;
+
+  fetch(url, { headers: { Accept: 'application/json' } })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error('Nominatim search failed');
       }
+      return res.json();
     })
-    if (!res.ok) throw new Error('Nominatim search failed')
-    const results = await res.json();
-    if (!results || results.length === 0) {
-      geoError.value = 'Location not found';
-      return;
-    }
-    let lat = parseFloat(results[0].lat);
-    let lng = parseFloat(results[0].lon);
-    const clamped = clampToBounds(lat, lng);
-    map.center.lat = clamped.lat;
-    map.center.lng = clamped.lng;
-    map.leaflet.setView([map.center.lat, map.center.lng]);
-    locationInput.value = `${map.center.lat.toFixed(5)}, ${map.center.lng.toFixed(5)}`;
-  } catch (err) {
-    console.error(err);
-    geoError.value = 'Error looking up location';
-  }
+    .then(results => {
+      if (!results || results.length === 0) {
+        geoError.value = 'Location not found';
+        return;
+      }
+
+      let lat = parseFloat(results[0].lat);
+      let lng = parseFloat(results[0].lon);
+
+      let clamped = clampToBounds(lat, lng);
+      map.center.lat = clamped.lat;
+      map.center.lng = clamped.lng;
+
+      map.leaflet.setView([map.center.lat, map.center.lng]);
+
+      locationInput.value = `${map.center.lat.toFixed(5)}, ${map.center.lng.toFixed(5)}`;
+    })
+    .catch(err => {
+      console.error(err);
+      geoError.value = 'Error looking up location';
+    });
 }
 
 // add new incidient
-async function submitNewIncident() {
+function submitNewIncident() {
   newIncidentError.value = '';
   newIncidentSuccess.value = '';
 
-  const requiredFields = [
+  let requiredFields = [
     'case_number',
     'date',
     'time',
@@ -587,8 +611,10 @@ async function submitNewIncident() {
     'police_grid',
     'neighborhood_number',
     'block'
-  ]
-  for (const field of requiredFields) {
+  ];
+
+  // validation: must fill all fields
+  for (let field of requiredFields) {
     if (!newIncident[field]) {
       newIncidentError.value = 'Please fill out all fields before submitting.';
       return;
@@ -600,44 +626,49 @@ async function submitNewIncident() {
     return;
   }
 
-  try {
-    const res = await fetch(`${apiBaseUrl.value}/new-incident`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...newIncident,
-        code: Number(newIncident.code),
-        police_grid: Number(newIncident.police_grid),
-        neighborhood_number: Number(newIncident.neighborhood_number)
-      })
+  let payload = {
+    ...newIncident,
+    code: Number(newIncident.code),
+    police_grid: Number(newIncident.police_grid),
+    neighborhood_number: Number(newIncident.neighborhood_number)
+  };
+
+  fetch(`${apiBaseUrl.value}/new-incident`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+    .then(res => {
+      if (!res.ok) {
+        return res.text().then(text => {
+          throw new Error(text || 'Server error adding incident.');
+        });
+      }
+      return res.text(); // server might return a simple message
     })
+    .then(() => {
+      newIncidentSuccess.value = 'Incident added successfully.';
 
-    if (!res.ok) {
-      const text = await res.text();
-      newIncidentError.value = text || 'Server error adding incident.';
-      return;
-    }
+      // clear the form
+      requiredFields.forEach(f => {
+        newIncident[f] = '';
+      });
 
-    newIncidentSuccess.value = 'Incident added successfully.';
-    // clear form
-    requiredFields.forEach(f => {
-      newIncident[f] = '';
+      // refresh crimes
+      return refreshCrimes();
     })
-
-    // refresh
-    await refreshCrimes();
-  } catch (err) {
-    console.error(err);
-    newIncidentError.value = 'Network error adding incident.';
-  }
+    .catch(err => {
+      console.error(err);
+      newIncidentError.value = err.message || 'Network error adding incident.';
+    });
 }
 
 // dialog handler
 function closeDialog() {
-  const dialog = document.getElementById('rest-dialog');
-  const url_input = document.getElementById('dialog-url');
+  let dialog = document.getElementById('rest-dialog');
+  let url_input = document.getElementById('dialog-url');
   if (crime_url.value !== '' && url_input.checkValidity()) {
     dialog_err.value = false;
     dialog.close();
