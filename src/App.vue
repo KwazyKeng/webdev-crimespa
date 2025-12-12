@@ -42,6 +42,7 @@ const map = reactive({
     nw: { lat: 45.008206, lng: -93.217977 },
     se: { lat: 44.883658, lng: -92.993787 }
   },
+  incident_marker: null, 
   neighborhood_markers: [
     { id: 1, location: [44.942068, -93.020521], marker: null },
     { id: 2, location: [44.977413, -93.025156], marker: null },
@@ -127,6 +128,23 @@ function clampToBounds(lat, lng) {
   const clampedLat = Math.min(maxLat, Math.max(minLat, lat))
   const clampedLng = Math.min(maxLng, Math.max(minLng, lng))
   return { lat: clampedLat, lng: clampedLng }
+}
+
+function address(block) {
+  if (!block) return block;
+
+  let parts = block.split(' ')
+  let first = parts[0].split('')
+  
+  for (let i = 0; i < first.length; i++){
+    if(first[i] === "X"){
+      first[i] = "0";
+    }
+  }
+
+  parts[0] = first.join('');
+
+  return parts.join(' ')
 }
 
 function updateVisibleNeighborhoods() {
@@ -296,6 +314,68 @@ async function goToLocation() {
   }
 }
 
+function focusCrime(crime) {
+  if (!crime || !map.leaflet) return;
+
+  let query = address(crime.block);
+  let url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${query}`;
+
+  fetch(url, { 
+      headers: { Accept: 'application/json' } })
+    .then(res => {
+      return res.json();
+    })
+
+    .then(results => {
+
+      let lat = parseFloat(results[0].lat);
+      let lng = parseFloat(results[0].lon);
+
+      let clamped = clampToBounds(lat, lng);
+      lat = clamped.lat;
+      lng = clamped.lng;
+
+      map.center.lat = lat;
+      map.center.lng = lng;
+
+      map.leaflet.setView([lat, lng], 16);
+
+      if (!map.incident_marker) {
+        map.incident_marker = L.circleMarker([lat, lng], {
+          radius: 8,
+          color: 'red',
+          fillColor: 'red',
+          fillOpacity: 0.9
+        }).addTo(map.leaflet);
+      } else {
+        map.incident_marker.setLatLng([lat, lng]);
+      }
+      let popupHtml = `
+        <div>
+          <strong>${crime.incident_type}</strong><br/>
+          ${crime.date} ${crime.time}<br/>
+          ${address(crime.block)}<br/>
+        </div>
+      `;
+
+      map.incident_marker.bindPopup(popupHtml).openPopup();
+      map.incident_marker.off("popupopen");
+      map.incident_marker.on("popupopen", () => {
+        let btn = document.getElementById(`crime-delete-${crime.case_number}`);
+        if (btn) {
+          btn.onclick = function () {
+            deleteIncident(crime.case_number);
+          };
+        }
+      });
+    })
+
+    .catch(err => {
+      console.error("500 Error:", err);
+    });
+}
+
+
 // ======= NEW INCIDENT FORM =======
 async function submitNewIncident() {
   newIncidentError.value = ''
@@ -355,6 +435,36 @@ async function submitNewIncident() {
     console.error(err)
     newIncidentError.value = 'Network error adding incident.'
   }
+}
+//delete
+
+function deleteIncident(caseNumber) {
+
+  fetch(`${apiBaseUrl.value}/remove-incident`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ case_number: caseNumber })
+  })
+  .then(res => res.text())
+  .then(text => {
+
+    console.log(text);
+
+    let oldList = crimes.value;
+    let newList = [];
+
+    for (let i = 0; i < oldList.length; i++) {
+      let crime = oldList[i];
+      if (crime.case_number !== caseNumber) {
+        newList.push(crime);
+      }
+    }
+    crimes.value = newList;
+  }).catch(err => {
+    console.error("500 Error:", err);
+  });
 }
 
 // ======= DIALOG HANDLER =======
@@ -426,7 +536,9 @@ function closeDialog() {
                 <td>{{ crime.time }}</td>
                 <td>{{ crime.neighborhood_name }}</td>
                 <td>{{ crime.incident_type }}</td>
-                <td>{{ crime.block }}</td>
+                <td>{{ address(crime.block) }}</td>
+                <td><button class = "delete-button" type="button" @click="deleteIncident(crime.case_number)">Delete</button></td>
+                <td><button class = "incident" type="button" @click="focusCrime(crime)">Incident</button></td>
               </tr>
             </tbody>
           </table>
@@ -571,5 +683,19 @@ function closeDialog() {
 .dialog-error {
   font-size: 1rem;
   color: #d32323;
+}
+
+.delete-button{
+  background-color: rgb(211, 35, 35);
+  color: rgb(255, 255, 255);
+  padding: 10px 10px;
+  cursor: pointer;
+}
+
+.incident{
+  background-color: rgb(0, 170, 249);
+  color: rgb(255, 255, 255);
+  padding: 10px 10px;
+  cursor: pointer;
 }
 </style>
