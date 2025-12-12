@@ -201,15 +201,15 @@ let incidentGroups = [
 function getCategoryForCode(code) {
   for (let group of incidentGroups) {
     if (group.codes.includes(code)) {
-      return group.category || 'other'
+      return group.category || 'other';
     }
   }
-  return 'other'
+  return 'other';
 };
 
 let selectedCodes = computed(() => {
   if (!filters.selectedIncidentGroups || filters.selectedIncidentGroups.length === 0) {
-    return []
+    return [];
   }
 
   return incidentGroups
@@ -401,8 +401,8 @@ function updateNeighborhoodMarkers() {
   // count crimes per neighborhood
   let counts = {};
   filteredCrimes.value.forEach(c => {
-  let id = c.neighborhood_number;
-  counts[id] = (counts[id] || 0) + 1;
+    let id = c.neighborhood_number;
+    counts[id] = (counts[id] || 0) + 1;
   });
 
   map.neighborhood_markers.forEach(n => {
@@ -480,7 +480,6 @@ function initializeCrimes() {
         isLoading.value = false;
       });
   } catch (err) {
-    // this outer try/catch will almost never fire, but we'll keep it symmetrical
     console.error(err);
     loadError.value = 'Error loading data from REST API';
     isLoading.value = false;
@@ -518,8 +517,9 @@ function refreshCrimes() {
 function focusCrime(crime) {
   if (!crime || !map.leaflet) return;
 
-  let query = address(crime.block);
-  let url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${query}`;
+  let query = `${address(crime.block)}, Saint Paul, MN`;
+  let viewbox = "-93.225,45.020,-93.000,44.885";
+  let url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&bounded=1&viewbox=${viewbox}&q=${encodeURIComponent(query)}`;
 
   fetch(url, { 
       headers: { Accept: 'application/json' } })
