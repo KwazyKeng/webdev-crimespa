@@ -7,7 +7,6 @@ body {
     padding: 0;
 }
 
-/* Limit content width */
 body > div {
     max-width: 1000px;
     margin: 2rem auto;
@@ -17,7 +16,6 @@ body > div {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* ---------- Headings ---------- */
 h1 {
     text-align: center;
     font-weight: 700;
@@ -38,14 +36,12 @@ h4 {
     font-weight: 600;
 }
 
-/* ---------- Paragraphs ---------- */
 p {
     margin-bottom: 1rem;
     font-size: 1rem;
     color: #444;
 }
 
-/* ---------- Images ---------- */
 .image {
     width: 180px;
     height: 180px;
@@ -61,12 +57,10 @@ p {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
 }
 
-/* Center images in the first section */
 body > div:first-of-type {
     text-align: center;
 }
 
-/* ---------- Lists ---------- */
 ul {
     margin-top: 1rem;
     padding-left: 1.5rem;
@@ -77,14 +71,17 @@ li {
     font-size: 1rem;
 }
 
-/* ---------- Video Placeholder ---------- */
 div p:only-child {
     text-align: center;
     font-style: italic;
     color: #777;
 }
 
-/* ---------- Responsive ---------- */
+.vid {
+    display:block;
+    margin:0 auto;
+}
+
 @media (max-width: 600px) {
     .image {
         width: 130px;
