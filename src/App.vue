@@ -556,6 +556,9 @@ function focusCrime(crime) {
           <strong>${crime.incident_type}</strong><br/>
           ${crime.date} ${crime.time}<br/>
           ${address(crime.block)}<br/>
+          <button id="crime-delete-${crime.case_number}" type="button">
+            Delete
+          </button>
         </div>
       `;
 
